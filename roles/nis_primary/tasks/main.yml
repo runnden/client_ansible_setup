@@ -39,13 +39,14 @@
       
 - name: Ensure services are enabled. 
   systemd: 
-    name: 
+    name: "{{ item }}"
+    with_items:
       - rpcbind
       - ypserv
       - ypxfrd
     enabled: yes
     state: started
-    
+        
 - name: run ypinit
   shell: /usr/lib64/yp/ypinit -m 
    
