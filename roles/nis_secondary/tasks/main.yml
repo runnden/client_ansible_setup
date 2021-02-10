@@ -1,9 +1,77 @@
 ---
-- hosts: all
-  serial: 5
-  gather_facts: no
-  pre_tasks:
-    - setup:
-    
-  roles:
-    - nis_primary
+
+- name: make sure /etc/hosts has the correct information for the primary
+  lineinfile:
+    path: /etc/hosts
+    line:
+      10.1.30.169 kymera-compbio-nis-primary
+
+- name: make sure /etc/hosts has the correct information for the secondary
+  lineinfile:
+    path: /etc/hosts
+    line:
+      10.1.18.23  kymera-compbio-nis-secondary
+
+- name: Install the correct packages.
+  yum:
+    name:
+      - ypserv
+      - rpcbind
+      - yp-tools
+      - nss-pam-ldapd
+      - nss_nis
+      - ypbind
+      - authconfig-gtk
+    state: present
+
+- name: make sure ypdomain is  set
+  command: ypdomainname kymeracompbio
+
+ - name: edit to /etc/sysconfig/network
+   lineinfile:
+    path: /etc/sysconfig/network
+    line:
+      NISDOMAIN=kymeracompbio
+
+- name: Edit to /etc/yp.conf
+  blockinfile:
+    path: /etc/yp.conf
+    block:
+      ypserver kymera-compbio-nis-primary
+      domain kymcompbio server 10.1.30.169
+      domain kymcompbio server 10.1.18.23
+
+ - name: Ensure rpcbind is enabled.
+   systemd:
+    name: rpcbind
+    enabled: yes
+    state: started
+
+- name: Ensure ypserv is enabled.
+  systemd:
+    name: ypserv
+    enabled: yes
+    state: started
+
+- name: Ensure ypxfrd is enabled.
+  systemd:
+    name: ypxfrd
+    enabled: yes
+    state: started
+
+ - name: Ensure yppasswdd is enabled.
+   systemd:
+    name: yppasswdd
+    enabled: yes
+    state: started
+
+ - name: run ypinit
+   command: /usr/lib64/yp/ypinit -s kymera-compbio-nis-primary
+
+ - name: Restart ypbind
+   systemd:
+    name: ypbind
+    state: restarted
+
+- name: enablenis
+   command: authconfig --enablenis --enablemkhomedir –update
