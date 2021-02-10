@@ -1,5 +1,9 @@
 ---
 
+- name:
+  include_vars:
+    file: main.yml 
+
 - name: make sure /etc/hosts has the correct information for the primary
   lineinfile:
     path: /etc/hosts
