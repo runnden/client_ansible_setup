@@ -1,13 +1,17 @@
 ---
+- name: include vars file
+  include_vars:
+    fie: main.yml
+
 - name: set hostname
-  shell: hostnamectl set-hostname kymera-compbio-ni-primary
+  shell: hostnamectl set-hostname {{ nispriarmyhostname }}
   
 - name: make sure /etc/hosts has the correct information for the primary
   blockinfile: 
     path: /etc/hosts
     block: 
-      {{ ansible_default_ipv4.address }} kymera-compbio-nis-primary
-      10.1.25.54 kymera-compbio-nis-secondary
+      {{ ansible_default_ipv4.address }} {{ nisprimaryhostname }}
+      {{ nissecondaryip }} {{ nissecondaryhostname }}
     
 - name: Install the correct packages. 
   yum: 
@@ -22,20 +26,20 @@
     state: present
     
 - name: make sure ypdomain is  set
-  shell: ypdomainename kymeracompbio
+  shell: ypdomainename {{ nisdomain }}
   
 - name: edit to /etc/sysconfig/network
   lineinfile:
     path: /etc/sysconfig/network
     line:
-      NISDOMAIN=kymeracompbio
+      NISDOMAIN={{ nisdomain }}
       
 - name: Edit to /etc/yp.conf
   blockinfile:
   path: /etc/yp.conf
   block:
-    ypserver kymera-compbio-nis-primary
-    domain kymcompbio server 10.1.25.54
+    ypserver {{ nisprimaryhostname }}
+    domain {{ nisdomain }} server {{ nissecondaryip }}
       
 - name: Ensure services are enabled. 
   systemd: 
