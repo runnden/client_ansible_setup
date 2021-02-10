@@ -1,9 +1,128 @@
 ---
-- hosts: all
-  serial: 5
-  gather_facts: no
-  pre_tasks:
-    - setup:
+- name: set hostname
+  shell: hostnamectl set-hostname kymera-compbio-ni-primary
+  
+- name: make sure /etc/hosts has the correct information for the primary
+  blockinfile: 
+    path: /etc/hosts
+    block: 
+      10.1.18.228 kymera-compbio-nis-primary
+      10.1.25.54 kymera-compbio-nis-secondary
     
-  roles:
-    - nis_primary
+- name: Install the correct packages. 
+  yum: 
+    name: 
+      - ypserv
+      - rpcbind
+      - yp-tools
+      - nss-pam-ldapd
+      - nss_nis
+      - ypbind
+      - authconfig-gtk
+    state: present
+    
+- name: make sure ypdomain is  set
+  shell: ypdomainename kymeracompbio
+  
+- name: edit to /etc/sysconfig/network
+  lineinfile:
+    path: /etc/sysconfig/network
+    line:
+      NISDOMAIN=kymeracompbio
+      
+- name: Edit to /etc/yp.conf
+  blockinfile:
+  path: /etc/yp.conf
+  block:
+    ypserver kymera-compbio-nis-primary
+    domain kymcompbio server 10.1.25.54
+      
+- name: Ensure services are enabled. 
+  systemd: 
+    name: 
+      - rpcbind
+      - ypserv
+      - ypxfrd
+    enabled: yes
+    state: started
+    
+- name: run ypinit
+  shell: /usr/lib64/yp/ypinit -m 
+   
+- name: edit to /var/yp/Makefile
+  lineinfile: 
+    path: /etc/yp/Makefile
+    regexp: '^MERGE\_GROUP\='
+    line: MERGE_GROUP=false
+    
+- name: edit to /var/yp/Makefile
+  lineinfile:
+    path: /etc/yp/Makefile
+    regexp: '^MERGE\_PASSWD\=true'
+    line: MERGE_PASSWD=false
+    
+- name: edit to /var/yp/Makefile
+  lineinfile: 
+    path: /etc/yp/Makefile
+    regexp: '^YPSRCDIR\ \='
+    line: YPSRCDIR = /var/yp/etc
+    
+- name: edit to /var/yp/Makefile
+  lineinfile:
+    path: /etc/yp/Makefile
+    regexp: '^YPPWDDIR\ \='
+    line: YPPWDDIR = /var/yp/etc
+    
+- name: create directories
+  file:
+    path: /var/yp/maps
+    state: directory
+    mode: '0755'
+    
+- name: create files in /var/yp/maps
+  file:
+    path:
+      - /var/yp/maps/group
+      - /var/yp/maps/gshadow
+      - /var/yp/maps/passwd
+      - /var/yp/maps/shadow
+    state: touch
+    
+- name: copy over /etc/services
+  shell: cp /etc/services /var/yp/maps/
+  
+- name: copy over /etc/protocols
+  shell: cp /etc/protocols /var/yp/maps
+  
+- name: configure /etc/sysconfig/yppasswdd
+  lineinfile: 
+    line: PASSWDFILE=/var/yp/etc/passwd
+
+- name: run make
+  shell: make -C /var/yp
+
+- name: restart yp service on secondary
+  systemd:
+  name:
+    - rpcbind
+    - ypserv
+    - ypxfrd
+    - yppasswdd
+    - ypbind
+  state: restarted 
+  
+- name: enablenis
+  shell: authconfig --enablenis --enablemkhomedir --update
+  
+- name: set SELinx context passwd and shadow 
+  file: 
+    path:
+      - /var/yp/etc/passwd
+      - /var/yp/etc/shadow
+    owner: root
+    group: root
+    mode: 0644
+    seuser: system_u
+    serole: object_r
+    setype: bin_t
+    selevel: s0 
