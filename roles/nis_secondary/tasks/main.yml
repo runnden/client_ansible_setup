@@ -4,13 +4,13 @@
   lineinfile:
     path: /etc/hosts
     line:
-      10.1.30.169 kymera-compbio-nis-primary
+      {{ nisprimaryip }} {{ nisprimaryhostname }}
 
 - name: make sure /etc/hosts has the correct information for the secondary
   lineinfile:
     path: /etc/hosts
     line:
-      10.1.18.23  kymera-compbio-nis-secondary
+      {{ ansible_default_ipv4.address }}  {{ nissecondaryhostname }}
 
 - name: Install the correct packages.
   yum:
@@ -25,21 +25,21 @@
     state: present
 
 - name: make sure ypdomain is  set
-  command: ypdomainname kymeracompbio
+  command: ypdomainname {{ nisdomain }}
 
  - name: edit to /etc/sysconfig/network
    lineinfile:
     path: /etc/sysconfig/network
     line:
-      NISDOMAIN=kymeracompbio
+      NISDOMAIN={{ nisdomain }}
 
 - name: Edit to /etc/yp.conf
   blockinfile:
     path: /etc/yp.conf
     block:
-      ypserver kymera-compbio-nis-primary
-      domain kymcompbio server 10.1.30.169
-      domain kymcompbio server 10.1.18.23
+      ypserver {{ nisprimaryhostname }}
+      domain {{ nisdomain }} server {{ nisprimaryip }}
+      domain {{ nisdomain }} server {{ ansible_default_ipv4.address }}
 
  - name: Ensure rpcbind is enabled.
    systemd:
@@ -66,7 +66,7 @@
     state: started
 
  - name: run ypinit
-   command: /usr/lib64/yp/ypinit -s kymera-compbio-nis-primary
+   command: /usr/lib64/yp/ypinit -s {{ nisprimaryhostname }}
 
  - name: Restart ypbind
    systemd:
