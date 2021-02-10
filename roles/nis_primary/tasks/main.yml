@@ -6,7 +6,7 @@
   blockinfile: 
     path: /etc/hosts
     block: 
-      10.1.18.228 kymera-compbio-nis-primary
+      {{ ansible_default_ipv4.address }} kymera-compbio-nis-primary
       10.1.25.54 kymera-compbio-nis-secondary
     
 - name: Install the correct packages. 
