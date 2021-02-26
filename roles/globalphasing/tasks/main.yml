@@ -1,1 +1,151 @@
 ---
+- name: Installing dependent packages  
+  become: yes
+  yum: 
+    name: 
+      - fontconfig.i686
+      - fontconfig.x86_64
+      - freetype.i686
+      - freetype.x86_64
+      - tkinter
+      - python-pmw
+      - apbs
+      - fftw2
+      - numpy
+      - netcdf
+      - tillib
+      - motif
+      - compat-glew
+      - freeglut
+      - compat-libstdc++-33.i686
+      - glib2.i686
+      - glib2.x86_64
+      - glibc.i686
+      - glibc.x86_64
+      - ImageMagick
+      - java-1.6.0-openjdk
+      - libSM.i686
+      - libSM.x86_64
+      - libXent.i686
+      - libXext.x86_64
+      - libXi.i686
+      - libXi.x86_64
+      - libXmu.i686
+      - libXmu.x86_64
+      - libXrender.i686
+      - libXrender.x86_64
+      - mesa-libGLU.i686
+      - mesa-libGLU.x85_64
+      - mesa-dri-drivers
+      - openbabel
+      - perl-core
+      - perl-CGI
+      - perl-Env
+      - perl-List-MoreUtils
+      - php
+      - tcsh
+      - grace
+      - texlive
+      - texlive-hyphenat
+      - texlive-latex
+      - texlive-multirow
+      - texlive-xtab
+      - dejagnu
+      - dejavu-sans-mono-fonts
+      - dejavu-serif-fonts
+      - dejavu-sans-fonts
+    update_cache: yes
+  register: gph1_rpms
+  tags: GlobalPhasing_install
+
+- name: Check for previous Molprobity install
+  stat: path=/app/molprobity4/v4.02-528/bin
+  register: molprobity_orig
+  tags: GlobalPhasing_install
+
+- name: Create Molprobity directory
+  become: yes
+  file:
+    path: /app/molprobity4
+    state: directory
+    owner: root
+    mode: 0755
+  when: not molprobity_orig.stat.exists
+  register: molprobity_dir
+  tags: GlobalPhasing_install
+
+- name: Unpack the Molprobity source
+  become: yes
+  unarchive:
+    src: /software/GlobalPhasing/molprobity4-4.02-528.tgz
+    dest: /app/molprobity4
+  when: molprobity_dir.changed
+  register: molprobity_unpack
+  tags: GlobalPhasing_install
+
+- name: Move unpacked files to proper directory name
+  become: yes
+  command: "mv /app/molprobity4/molprobity4-4.02-528 /app/molprobity4/v4.02-528"
+  when: molprobity_unpack.changed
+  register: molprobity_move
+  tags: GlobalPhasing_install
+
+- name: Check for previous GlobalPhasing install
+  stat: path=/app/gphl/v20200918/bin/
+  register: gphl_orig
+  tags: GlobalPhasing_install
+
+- name: Create Global Phasing directory
+  become: yes
+  file:
+    path: /app/gphl
+    state: directory
+    owner: root
+    mode: 0755
+  when: not gphl_orig.stat.exists
+  register: gphl_dir
+  tags: GlobalPhasing_install
+
+- name: Unpack the Global Phasing source
+  become: yes
+  unarchive:
+    src: /software/GlobalPhasing/incyte_gphl_install.tar.gz
+    dest: /
+  when: gphl_dir.changed
+  register: gphl_unpack
+  tags: GlobalPhasing_install
+
+- name: Add the local timezone to php config
+  become: yes
+  command: 'sed -i.O "s#.date.timezone =#date.timezone = America/New_York#" /etc/php.ini'
+  when: gphl_unpack.changed
+  register: php_tz
+  tags: GlobalPhasing_install    
+      
+      
+     
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

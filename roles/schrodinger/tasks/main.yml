@@ -1,1 +1,46 @@
 ---
+- name: Check for previous Schrodinger 2020-3 install
+  stat: path=/app/schrodinger/v2020-3
+  register: schrodinger_orig
+  tags: schrodinger_install
+
+- name: Crate the Schrodinger directory
+  become: yes
+  file:
+    path: /app/schrodinger
+    state: directory
+    owner: root
+    mode: 0755
+  when: not schrodinger_orig.stat.exists
+  register: schrodinger_dir
+  tags: schrodinger_install
+
+- name: Unpack the Schrodinger 2020-3 source
+  become: yes
+  unarchive:
+    src: /software/Schrodinger/Schrodinger_Suites_2020-3_Linux-x86_64.tar
+    dest: /app/schrodinger
+  when: schrodinger_dir.changed
+  register: schrodinger_unpack
+  tags: schrodinger_install
+
+- name: Run the Schrodinger 2020-3 installer
+  command: "./INSTALL -b -s /app/schrodinger/v2020-3 -k /scratch -t /app/schrodinger/v2020-3/thirdparty *.gz"
+  args:
+    chdir: /app/schrodinger/Schrodinger_Suites_2020-3_Linux-x86_64
+  when: schrodinger_unpack.changed
+  register: schrodinger_setup
+  tags: schrodinger_install
+
+- name: Install the Schrodinger license
+  command: "/app/schrodinger/v2020-3/licadmin INSTALL -k da523423-652e-4494-9a22-fcc069fc15ab"
+  when: schrodinger_setup.changed
+  register: schrodinger_license
+  tags: schrodinger_install
+- name: Remove the Schrodinger install files
+  become: yes
+  command: "rm -rf /app/schrodinger/Schrodinger_Suites_2020-3_Linux-x86_64"
+  when: schrodinger_license.changed
+  register: schrodinger_clean
+  tags: schrodinger_install
+

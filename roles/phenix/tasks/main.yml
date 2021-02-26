@@ -1,1 +1,49 @@
 ---
+- name: Check for previous Phenix 1.18.2 install
+  stat: path=/app/phenix/v1.18.2-3874/build/bin
+  register: phenix_orig
+  tags: phenix_install
+
+- name: Crate the Phenix directory
+  become: yes
+  file:
+    path: /app/phenix
+    state: directory
+    owner: root
+    mode: 0755
+  when: not phenix_orig.stat.exists
+  register: phenix_dir
+  tags: phenix_install
+
+- name: Unpack the Phenix 1.18.2 source
+  become: yes
+  unarchive:
+    src: /software/Phenix/phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6.tar.gz
+    dest: /app/phenix
+  when: phenix_dir.changed
+  register: phenix_unpack
+  tags: phenix_install
+
+- name: Run the Phenix 1.18.2 installer
+  become: yes
+  command: "/app/phenix/phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6/install --prefix=/app/phenix"
+  args:
+    chdir: "/app/phenix/phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6"
+  when: phenix_unpack.changed
+  register: phenix_setup
+  tags: phenix_install
+
+- name: Move unpacked files to proper directory name
+  become: yes
+  command: "mv /app/phenix/phenix-1.18.2-3874 /app/phenix/v1.18.2-3874"
+  when: phenix_setup.changed
+  register: phenix_move
+  tags: phenix_install
+
+- name: Remove the Phenix install files
+  become: yes
+  command: "rm -rf /app/phenix/phenix-installer-1.18.2-3874-intel-linux-2.6-x86_64-centos6"
+  when: phenix_move.changed
+  register: phenix_clean
+  tags: phenix_install
+

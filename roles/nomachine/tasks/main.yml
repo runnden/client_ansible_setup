@@ -1,1 +1,7 @@
 ---
+- name: Installing NoMachine 6.11.2
+    become: yes
+    yum:
+      name: /software/NoMachine/nomachine_6.11.2_1_x86_64.rpm
+      update_cache: yes
+    tags: nomachine_install

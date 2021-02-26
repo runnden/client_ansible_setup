@@ -1,1 +1,80 @@
 ---
+- name: Installing RPM's
+  become: yes
+  yum:
+    name:
+      - cairo*
+      - cmake
+      - crypto-utils
+      - curl
+      - dos2unix
+      - elfutils
+      - elfutils-devel
+      - environment-modules
+      - ftp
+      - func
+      - ganglia
+      - ganglia-gmond
+      - gcc
+      - glibc
+      - hdf5-devel
+      - hmaccalc
+      - json-c12-devel
+      - json-glib-devel
+      - koan
+      - lapack
+      - libatomic-static
+      - libSM
+      - libSM-devel
+      - libxml2-devel
+      - libXcursor
+      - libXcursor-devel
+      - libXext
+      - libXi
+      - libXi-devel
+      - libXinerama
+      - libXinerama-devel
+      - libXrandr
+      - libXrandr-devel
+      - libXrender
+      - libXrender-devel
+      - libXt
+      - libXt-devel
+      - libXtst
+      - libXtst-devel
+      - mesa-libGL
+      - mesa-libGL-devel
+      - mesa-libGLU
+      - mesa-libGLU-devel
+      - ncurses-devel
+      - ncurses-libs
+      - NLopt-devel
+      - nvidia-texture-tools-devel
+      - openhpi
+      - openhpi-libs
+      - openmpi
+      - openmpi-devel
+      - openssl
+      - openssl-devel
+      - perl-XML-XPath
+      - samba
+      - screen
+      - sqlite2-devel
+      - tcl-devel
+      - tcl-mysqltcl
+      - telnet
+      - unixODBC
+      - unixODBC-devel
+      - wget
+      - xml2
+      - xterm
+      - yp-tools
+      - yum-cron
+      - yum-utils
+    update_cache: yes
+  tags: rpm_install
+
+- name: Installing R Dependencies
+  become: yes
+  command: "yum-builddep -y R"
+  tags: rpm_install

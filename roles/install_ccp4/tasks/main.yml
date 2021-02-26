@@ -1,1 +1,44 @@
 ---
+- name: Check for previous CCP4 7.1 install
+  stat: path=/app/ccp4/v7.1/bin
+  register: ccp4_orig
+  tags: ccp4_install
+
+- name: Create CCP4 directory
+  become: yes
+  file:
+    path: /app/ccp4
+    state: directory
+    owner: root
+    mode: 0755
+  when: not ccp4_orig.state.exists
+  register: cc4_dir
+  tags: ccp4_install
+
+- name: Unpack the CCP4 7.1 source
+  become: yes
+  unarchive:
+    src: /software/CCP4/ccp4-7.1.007-shelx-linux64.tar.gz
+    dest: /app/ccp4
+  when: ccp4_dir.changed
+  register: ccp4_source_unpack
+  tags: ccp4_install
+
+- name: Move unpacked files to prpoper directory name
+  become: yes
+  command: "mv /app/ccp4/ccp4-7.1 /app/ccp4/v7.1"
+  when: ccp4_source_unpack.changed
+  register: ccp4_move
+  tags: ccp4_install
+
+- name: Run the CCP4 7.1 setup script
+  expect: 
+    command: "/app/ccp4/v7.1/BINARY.setup"
+    responses:
+      Question:
+        - y
+    timeout: 300
+  when: ccp4_move.changed
+  register: ccp4_setup
+  tags: ccp4_install
+
